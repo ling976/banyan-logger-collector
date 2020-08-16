@@ -1,0 +1,3 @@
+# banyan-logger-collector
+springboot项目日志收集器
+用于自动收集项目日志内容并将其上传到日志文件服务器中,可用于多个项目的日志统一管理
