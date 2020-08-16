@@ -22,7 +22,7 @@ public class BanyanStarterProperties {
 	/**
 	 * 单文件大小
 	 */
-	private String maxFileSize;
+	private String maxFileSize = "10M";
 	/**
 	 * 文件保存时间(天)
 	 */
