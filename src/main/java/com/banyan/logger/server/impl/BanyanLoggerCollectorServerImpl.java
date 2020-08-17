@@ -75,9 +75,11 @@ public class BanyanLoggerCollectorServerImpl implements BanyanLoggerCollectorSer
 
 		//systemMonitor();
 
+		setConsoleOutput();
+		
 		clearHistory(this.properties);
 
-		setConsoleOutput();
+		
 		
 	}
 
@@ -145,7 +147,9 @@ public class BanyanLoggerCollectorServerImpl implements BanyanLoggerCollectorSer
 						// 文件头信息, 1表示未上传, 0 表示已上传
 						if (!StringUtils.isEmpty(line) && line.startsWith("1")) {
 							if (!BanyanLoggerCollectorServerUtils.cacheFileMap.containsKey(file.getName())) {
-								BanyanLoggerCollectorServerUtils.cacheFileMap.put(file.getName(), file);
+								String fileName = System.getProperty("banan.logger.file");
+								if(!StringUtils.isEmpty(fileName) && !file.getAbsolutePath().equals(fileName))
+									BanyanLoggerCollectorServerUtils.cacheFileMap.put(file.getName(), file);
 							}
 						}
 					} catch (Exception e) {

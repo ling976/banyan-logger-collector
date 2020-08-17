@@ -90,6 +90,10 @@ public class BanyanFilePrintStreamHelper {
 		this.banyanFtpServer = banyanFtpServer;
 	}
 
+	public BanyanFtpServer getBanyanFtpServer() {
+		return banyanFtpServer;
+	}
+
 	/**
 	 * 是否启用文件服务器
 	 * 
@@ -123,7 +127,7 @@ public class BanyanFilePrintStreamHelper {
 			boolean bool = new CachingDateFormatter("yyyy-MM-dd").format(System.currentTimeMillis()).equals(lastDate);
 			if (new File(fileName).length() > MAX_SIZE || !bool) {
 				stop();
-				banyanFtpServer.syncFile(new File(fileName));
+				banyanFtpServer.syncFile(new File(fileName),true);
 				start();
 			}
 		} catch (IOException e) {
@@ -151,6 +155,7 @@ public class BanyanFilePrintStreamHelper {
 	 */
 	public void start() {
 		fileName = BanyanFileNameUtils.getFileName(properties.getFileNamePattern());
+		System.setProperty("banan.logger.file", fileName);
 		lastDate = new CachingDateFormatter("yyyy-MM-dd").format(System.currentTimeMillis());
 		try {
 			// 写入文件头信息, 1表示未上传, 0 表示已上传
@@ -169,7 +174,7 @@ public class BanyanFilePrintStreamHelper {
 	 * 服务器停止
 	 */
 	public void destory() {
-		banyanFtpServer.syncFile(new File(fileName));
+		banyanFtpServer.syncFile(new File(fileName),true);
 		stop();
 	}
 

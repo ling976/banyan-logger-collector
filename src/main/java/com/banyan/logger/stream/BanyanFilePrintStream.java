@@ -30,6 +30,7 @@ public class BanyanFilePrintStream extends PrintStream {
 	public void setConsoleStreamHelper(BanyanFilePrintStreamHelper consoleStreamHelper) {
 		this.consoleStreamHelper = consoleStreamHelper;
 		this.consoleStreamHelper.start();
+		this.consoleStreamHelper.getBanyanFtpServer().syncFileThread();
 	}
 	
 	public void setOldPrintStream(PrintStream oldPrintStream) {

@@ -49,7 +49,6 @@ public class BanyanFtpServer {
 	public BanyanFtpServer(BanyanStarterFTPProperties ftpProperties) {
 		this.ftpProperties = ftpProperties;
 		scheduledThreadPoolExecutor = new ScheduledThreadPoolExecutor(2);
-		syncFileThread();
 	}
 
 	/**
@@ -114,8 +113,9 @@ public class BanyanFtpServer {
 	 * 同步文件到文件服务器
 	 * 
 	 * @param file
+	 * @param writeHead
 	 */
-	public void syncFile(File file) {
+	public void syncFile(File file,boolean writeHead) {
 		if(!enable) {
 			logger.info("BanyanFtpServer--->日志服务器无法连接");
 			return;
@@ -140,13 +140,12 @@ public class BanyanFtpServer {
 				return;
 			}
 			//写入文件头信息, 1表示未上传, 0 表示已上传
-			BanyanFileUtils.writeHead(file.getAbsolutePath(), ByteBuffer.wrap("0\r\n".getBytes()));
+			if(writeHead)
+				BanyanFileUtils.writeHead(file.getAbsolutePath(), ByteBuffer.wrap("0\r\n".getBytes()));
 			
+			//服务器根目录
 			getBaseDir();
-			if (!baseDir.isEmpty()) {
-				ftpClient.changeWorkingDirectory(baseDir);
-			}
-
+			//上传目录
 			Date date = new Date();
 			String year = new SimpleDateFormat("yyyy").format(date);
 			String month = new SimpleDateFormat("MMdd").format(date);
@@ -168,7 +167,8 @@ public class BanyanFtpServer {
 			ftpClient.disconnect();
 			BanyanLoggerCollectorServerUtils.cacheFileMap.remove(file.getName());
 		} catch (Exception e) {
-			BanyanFileUtils.writeHead(file.getAbsolutePath(), ByteBuffer.wrap("1\r\n".getBytes()));//写入文件头信息, 1表示未上传, 0 表示已上传
+			if(writeHead)
+				BanyanFileUtils.writeHead(file.getAbsolutePath(), ByteBuffer.wrap("1\r\n".getBytes()));//写入文件头信息, 1表示未上传, 0 表示已上传
 			logger.error(e.getMessage(), e);
 		}
 	}
@@ -176,16 +176,33 @@ public class BanyanFtpServer {
 	/**
 	 * 30秒同步一次文件
 	 */
-	private void syncFileThread() {
+	public void syncFileThread() {
 		scheduledThreadPoolExecutor.scheduleAtFixedRate(new Runnable() {
 			@Override
 			public void run() {
 				if(isEnabled()) {
 					for (File file : BanyanLoggerCollectorServerUtils.cacheFileMap.values()) {
-						syncFile(file);
+						String fileName = System.getProperty("banan.logger.file");
+						if(!fileName.equals(file.getAbsolutePath())) {
+							syncFile(file,true);
+						}else {
+							BanyanLoggerCollectorServerUtils.cacheFileMap.remove(file.getName());
+						}
+							
 					}
 				}
 			}
 		}, 100, 45000, TimeUnit.MILLISECONDS);
+		
+		//当前日志文件2分钟同步一次
+		scheduledThreadPoolExecutor.scheduleAtFixedRate(new Runnable() {
+			@Override
+			public void run() {
+				if(isEnabled()) {
+					String fileName = System.getProperty("banan.logger.file");
+					syncFile(new File(fileName),false);						
+				}
+			}
+		}, 100, 120000, TimeUnit.MILLISECONDS);
 	}
 }
