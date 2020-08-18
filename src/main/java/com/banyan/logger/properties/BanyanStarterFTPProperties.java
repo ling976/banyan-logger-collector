@@ -46,7 +46,7 @@ public class BanyanStarterFTPProperties {
 	private String portRange;
 	
 	/**
-	 * 服务器根路径,如果不配置则以项目名称为目录
+	 * 	服务器根路径,如果不配置则以项目名称为目录
 	 */
 	private String baseDir;
 	

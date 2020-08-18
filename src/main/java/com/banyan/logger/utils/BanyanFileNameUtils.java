@@ -4,12 +4,16 @@
 package com.banyan.logger.utils;
 
 import java.io.File;
+import java.io.FileReader;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+
+import org.apache.maven.model.Model;
+import org.apache.maven.model.io.xpp3.MavenXpp3Reader;
 
 import ch.qos.logback.core.util.CachingDateFormatter;
 
@@ -19,8 +23,6 @@ import ch.qos.logback.core.util.CachingDateFormatter;
  */
 public class BanyanFileNameUtils {
 	private static int i = 0;
-	
-	private static String fileNameTemp = "";
 	
 	public static List<String> getParams(String pattern, String content) {
 		Pattern p = Pattern.compile(pattern);
@@ -49,29 +51,22 @@ public class BanyanFileNameUtils {
 
 	/**
 	 * 生成一个文件名称
-	 * @param fileNamePattern  info.%d{yyyy-MM-dd}.%i.log
+	 * @param fileNamePattern  %s{project}.info.%d{yyyy-MM-dd}.%i.log
 	 * @return
 	 */
 	public static String getFileName(String fileNamePattern){
-		//String fileNamePattern = "info.%d{yyyy-MM-dd}.%i.log";
-		String reg = "\\$\\{(.+?)\\}";
 		String fileName = System.getProperty("LOG_HOME")+fileNamePattern;
-		
-		Map<String, String> data = new HashMap<String, String>();
-		data.put("LOG_HOME", System.getProperty("LOG_HOME"));
-		data.put("yyyy-MM-dd", new CachingDateFormatter("yyyy-MM-dd").format(System.currentTimeMillis()));
-		data.put("yyyy-MM-dd HH:mm:ss,SSS",new CachingDateFormatter("yyyy-MM-dd HH:mm:ss,SSS").format(System.currentTimeMillis()));
-		data.put("HH:mm:ss,SSS",new CachingDateFormatter("yyyy-MM-dd HH:mm:ss,SSS").format(System.currentTimeMillis()));
-		data.put("HH:mm:ss",new CachingDateFormatter("yyyy-MM-dd HH:mm:ss,SSS").format(System.currentTimeMillis()));
-		
-		String text = parse(reg, fileName, data).replaceAll("//", "/");
-		reg = "\\{(.+?)\\}";
-		text = parse(reg, text, data);
-		fileNameTemp = text;
+		Map<String, String> data = getDataMap();
+		//解析%s
+		String reg = "%s\\{(.+?)\\}";
+		fileName = parse(reg, fileName, data);
+		//解析%d
+		reg = "%d\\{(.+?)\\}";
+		fileName = parse(reg, fileName, data);
+		//解析%i
 		i=0;
-		text  = getName(text);
-		fileNameTemp = "";
-		return text;
+		fileName  = getName(fileName,fileName);
+		return fileName;
 	}
 
 	private synchronized static String getI() {
@@ -79,12 +74,39 @@ public class BanyanFileNameUtils {
 		return i < 10 ? "0"+i : i+"";
 	}
 	
-	private static String getName(String name) {
-		String temp = fileNameTemp.replace("%i", getI()).replace("%d", "");
+	private static String getName(String old,String name) {
+		String temp = old.replace("%i", getI());
 		File file = new File(temp);
 		if(file.exists()) {
-			return getName(temp);
+			return getName(old,temp);
 		}
 		return temp;
+	}
+	
+	private static Map<String, String> getDataMap() {
+		Map<String, String> data = new HashMap<String, String>();
+		data.put("LOG_HOME", System.getProperty("LOG_HOME"));
+		data.put("yyyy-MM-dd", new CachingDateFormatter("yyyy-MM-dd").format(System.currentTimeMillis()));
+		data.put("yyyy-MM-dd HH:mm:ss,SSS",new CachingDateFormatter("yyyy-MM-dd HH:mm:ss,SSS").format(System.currentTimeMillis()));
+		data.put("HH:mm:ss,SSS",new CachingDateFormatter("yyyy-MM-dd HH:mm:ss,SSS").format(System.currentTimeMillis()));
+		data.put("HH:mm:ss",new CachingDateFormatter("yyyy-MM-dd HH:mm:ss,SSS").format(System.currentTimeMillis()));
+		
+		String rootPath = System.getProperty("user.dir");
+		MavenXpp3Reader reader = new MavenXpp3Reader();
+		String myPom = rootPath + File.separator + "pom.xml";
+		Model model;
+		try {
+			model = reader.read(new FileReader(myPom));
+			data.put("project", model.getGroupId());
+		}  catch (Exception e) {
+			e.printStackTrace();
+		}
+		return data;
+	}
+	public static void main(String[] args) {
+		String fileName = "%s{project}.info.%d{yyyy-MM-dd}.%i.log";
+		System.out.println(getFileName(fileName));
+		System.out.println(getFileName(fileName));
+		System.out.println(getFileName(fileName));
 	}
 }

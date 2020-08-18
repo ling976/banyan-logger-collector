@@ -17,8 +17,11 @@ public class BanyanStarterProperties {
 	private String path;
 	/**
 	 * 文件名
+	 * %s 表示字符串
+	 * %d 表示日期
+	 * 
 	 */
-	private String fileNamePattern = "info.%d{yyyy-MM-dd}.%i.log";
+	private String fileNamePattern = "%s{project}.info.%d{yyyy-MM-dd}.%i.log";
 	/**
 	 * 单文件大小
 	 */
